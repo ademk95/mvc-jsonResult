@@ -1,0 +1,312 @@
+﻿
+@{
+    ViewBag.Title = "Index";
+}
+
+<head>
+    <link href="~/Content/bootstrap.min.css" rel="stylesheet" />
+    <script src="~/Scripts/jquery-1.10.2.min.js"></script>
+    <script src="~/Scripts/bootstrap.min.js"></script>
+    <style>
+        .btnClick{
+            cursor:pointer;
+        }
+    </style>
+</head>
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-6" id="formStudent">
+            <h3>Ogrenciler</h3>
+            <hr />
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>
+                            Ogrenci ID
+                        </th>
+                        <th>
+                            Ogrenci Adı
+                        </th>
+                        <th>
+                            
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="tabloSatir"></tbody>
+            </table>
+        </div>
+        <div class="row">
+            <div class="col-md-3">
+                <h3>Ogrenci Ekle</h3>
+                <hr />
+                <div class="form-group">
+                    <label>Ogrenci Adi</label>
+                    <input type="text" id="Ad" name="Ad" class="form-control" />
+                </div>
+                <div class="form-group">
+                    <input type="button" id="btnEkle" name="btnEkle" value="Ogrenci Ekle" class="btn btn-success" />
+                </div>
+                <div class="form-group">
+                    <p id="errorMessage" style="display:none;">Aynı Öğrenci Var.</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <h3>Ogrenci Detay</h3>
+                <hr />
+                <div id="detayList" style="font-size:15px;"></div>
+                <hr />
+                <div class="col-md-12 listDuzenle" style="display:none;">
+                    <h3>Düzenle</h3>
+                    <div class="form-group">
+                        <label>Id</label>
+                        <input type="text" id="GuncelId" name="GuncelId" class="form-control" disabled />
+                    </div>
+                    <div class="form-group">
+                        <label>Ad</label>
+                        <input type="text" id="GuncelAd" name="GuncelAd" class="form-control" />
+                    </div>
+                    <div class="form-group">
+                        <input type="button" id="btnGuncelle" name="btnGuncelle" value="Düzenle" class="btn btn-danger" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <hr />
+    <div class="row">
+        <div class="col-md-6">
+            <h3>Ogrenci Ara</h3>
+            <hr />
+            <div class="form-group">
+                <input type="text" id="Kelime" name="Kelime" class="form-control" placeholder="Ogrenci Ara" />
+            </div>
+            <div class="form-group">
+                <input type="submit" id="btnAra" name="btnAra" value="Ogrenci Ara" class="btn btn-danger" />
+            </div>
+            <hr />
+            <div class="form-group">
+                <h3 style="display:none;">Sonuclar</h3>
+                <ul id="searchList" class="alert alert-success" style="display:none;"></ul>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+
+    $("body").ready(function () {
+
+        $.ajax({
+
+            url: '/Home/GetOgrenci',
+            type: 'post',
+            dataType: 'json',
+            success: function (data) {
+                //alert("form Yüklenmesi basarılı.");
+                $(".listDuzenle").hide();
+
+                $.each(data, function (i, item) {
+                    console.log(item.Ad);
+                    //tabloSatir
+                    $("#tabloSatir").append("<tr>" + "<td>" + item.Id + "</td>" + "<td>" + item.Ad + "</td>" +
+                        "<td>" + "<a class='btnClick'>" + "Detay" + "</a>" + "</td>" + "<tr>");
+
+                });
+
+                var buton = document.querySelectorAll(".btnClick");
+                console.log(buton);
+                $(".listDuzenle").hide();
+
+                for (var i = 0; i < buton.length + 1; i++) {
+
+                    buton[i].addEventListener('click', function () {
+
+                        var etiket = this.parentElement;
+                        var us = etiket.parentElement;
+                        var etid = us.childNodes;
+                        var detayId = etid[0].innerHTML;
+                        console.log(detayId);
+                        $(".listDuzenle").hide();
+
+                        //id yi çektik.
+                        $.ajax({
+
+                            url: '/Home/OgrenciDetay/' + detayId,
+                            type: 'post',
+                            dataType: 'json',
+                            success: function (data) {
+                                $("#detayList").empty();
+                                $("#detayList").append("<p>" + "Id : " + data.Id + " " + "Ad : " + data.Ad + "  " +
+                                    "<a id='deleteItem' class='btn btn-success'>" + "Sil" + "</a>" + " - "
+                                    + "<a class='btn btn-primary btnAc'>" + "Düzenle" + "</a>" + "</p>");
+
+                                var gelenId = data.Id;
+                                var gelenAd = data.Ad;
+                                $("#GuncelId").val(gelenId);
+                                $("#GuncelAd").val(gelenAd);
+
+                                console.log(gelenId);
+                                console.log(gelenAd);
+                                //acma işlemini sonra yap.
+                                console.log($(".btnAc"));
+                                $(".btnAc").click(function () {
+                                    $(".listDuzenle").show();
+                                });
+
+                                $("#deleteItem").click(function () {
+                                    $.ajax({
+                                        url: '/Home/OgrenciSil',
+                                        data: {
+                                            'Id': gelenId,
+                                            'Ad': gelenAd
+                                        },
+                                        type: 'post',
+                                        dataType: 'json',
+                                        success: function (data) {
+                                            $(".listDuzenle").hide();
+                                            location.reload();
+                                        }
+                                    });
+                                });
+
+
+                            }
+                        });
+                    });
+                }
+            }
+
+        });
+
+
+    });
+
+    $("#btnEkle").click(function () {
+
+        $(".listDuzenle").hide();
+
+        //alert("Ogrenci Ekleme Butonu");
+
+        var ogrAd = $("#Ad").val();
+
+        if (ogrAd == "") {
+            alert("Ogrenci Adını Giriniz .");
+        }
+        else {
+            
+
+            //ogrenci ekleme
+            $.ajax({
+
+                url: '/Home/OgrenciEkle',
+                data: {
+                    'Ad': $("#Ad").val(),
+                },
+                type: 'post',
+                dataType: 'json',
+                success: function (data) {
+                    //aynı kişi var mı kontrol ?
+                    if (data == false) {
+                        alert("data false");
+                        $("#errorMessage").show();
+                    }
+                    //console.log("Kayıt Ekleme Basarılı..");
+                    //$("#errorMessage").hide();
+
+                    console.log(data.Id);
+                    var newId = data.Id;
+                    $.ajax({
+
+                        url: '/Home/GetNewOgrenci/' + newId,
+                        type: 'post',
+                        dataType: 'json',
+                        success: function (data) {
+                            alert("Yeni Ogrenci Geliyorrr Tabloya Bak.");
+                            $("#tabloSatir").append("<tr>" + "<td>" + data.Id + "</td>" + "<td>" + data.Ad + "</td>"
+                                + "<td>" + "<a class='btnClick'>" + "Detay" + "</a>" + "</td>" + "</tr>");
+                            location.reload();
+                            //<a href="/Home/UrunDetay/9">Boya Filli</a>
+                        }
+
+                    });
+
+
+                }
+
+            });
+        }
+    });
+
+    $("#btnAra").click(function () {
+
+        $(".listDuzenle").hide();
+
+        var id = $("#Kelime").val();
+        console.log(id);
+
+        $.ajax({
+
+            url: '/Home/OgrenciAra/' + id,
+            type: 'post',
+            dataType: 'json',
+            data: {
+                'kelime': $("#Kelime").val()
+            },
+            success: function (data) {
+                //alert("arama basarılı..");
+                //calısan id ye gore kod
+                //$("#searchList").empty();
+                //$("#searchList").append("<li>" + data.Id + " " + data.Ad + "</li>");
+                $("#searchList").show();
+                //burası ada göre, :)
+                $("#searchList").empty();
+                $.each(data, function (i, item) {
+
+                    $("#searchList").append("<li>" + item.Id + " " + item.Ad + "</li>");
+
+
+                });
+
+
+
+            }
+
+        });
+
+    });
+
+    $("#btnGuncelle").click(function () {
+
+        var gAd = $("#GuncelAd").val();
+        var gId = $("#GuncelId").val();
+
+        $.ajax({
+
+            url: '/Home/OgrenciGuncelle/' + gId,
+            data: {
+                'id': gId,
+                'ad': gAd
+            },
+            type: 'post',
+            dataType: 'json',
+            success: function () {
+                //$("#formStudent").reset();
+                //tabloyu yeniliyor.
+                location.reload();
+
+            }
+
+        });
+
+    });
+
+
+</script>
+
+<script type="text/javascript">
+
+
+
+</script>
